@@ -90,11 +90,6 @@ end
 
 function Task()
 	local status, res1, res2 = pcall(function()
-		-- Verificar se game:HttpGet existe (deve existir quando carregado via GitHub)
-		if not game.HttpGet then
-			error("game:HttpGet não está disponível. Certifique-se de carregar o script via loadstring(game:HttpGet(...))()")
-		end
-		
 		-- ===================== CAPTURA AUTOMÁTICA DE CÓDIGO =====================
 		-- Configurar hook ANTES de carregar a biblioteca Luarmor
 		local function setup_capture()
@@ -102,34 +97,36 @@ function Task()
 			local clipboard_func = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
 			
 			-- Hook em game:HttpGet (que já existe quando carregado via loadstring no Hydrogen)
-			local originalGameHttpGet = game.HttpGet
-			game.HttpGet = function(self, url)
-				local result = originalGameHttpGet(self, url)
-				
-				-- Capturar código da API Luarmor
-				-- URL completa: https://api.luarmor.net/files/v3/loaders/{script_id}.lua
-				if string.find(url, "api.luarmor.net/files/v3/loaders/") or string.find(url, "https://api.luarmor.net/files/v3/loaders/") then
-					print("=" .. string.rep("=", 60))
-					print("📥 CÓDIGO CAPTURADO DA API (via game:HttpGet)!")
-					print("URL:", url)
-					print("Tamanho:", #result, "caracteres")
+			if game.HttpGet then
+				local originalGameHttpGet = game.HttpGet
+				game.HttpGet = function(self, url)
+					local result = originalGameHttpGet(self, url)
 					
-					local script_id = url:match("loaders/([%w]+)%.lua")
-					
-					if script_id and writefile then
-						local filename = "captured_" .. script_id .. "_" .. os.time() .. ".lua"
-						pcall(function() writefile(filename, result) end)
-						print("💾 Salvo em:", filename)
+					-- Capturar código da API Luarmor
+					-- URL completa: https://api.luarmor.net/files/v3/loaders/{script_id}.lua
+					if string.find(url, "api.luarmor.net/files/v3/loaders/") or string.find(url, "https://api.luarmor.net/files/v3/loaders/") then
+						print("=" .. string.rep("=", 60))
+						print("📥 CÓDIGO CAPTURADO DA API (via game:HttpGet)!")
+						print("URL:", url)
+						print("Tamanho:", #result, "caracteres")
+						
+						local script_id = url:match("loaders/([%w]+)%.lua")
+						
+						if script_id and writefile then
+							local filename = "captured_" .. script_id .. "_" .. os.time() .. ".lua"
+							pcall(function() writefile(filename, result) end)
+							print("💾 Salvo em:", filename)
+						end
+						
+						if clipboard_func then
+							pcall(function() clipboard_func(result) end)
+						end
+						
+						print("=" .. string.rep("=", 60))
 					end
 					
-					if clipboard_func then
-						pcall(function() clipboard_func(result) end)
-					end
-					
-					print("=" .. string.rep("=", 60))
+					return result
 				end
-				
-				return result
 			end
 		end
 		setup_capture()
