@@ -90,8 +90,12 @@ end
 
 function Task()
 	local status, res1, res2 = pcall(function()
+		-- Obter a biblioteca da API Luarmor (código original)
+		local api = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
+		
 		-- ===================== CAPTURA AUTOMÁTICA DE CÓDIGO =====================
-		-- Configurar hook ANTES de carregar a biblioteca Luarmor
+		-- Configurar hook DEPOIS de carregar a biblioteca Luarmor
+		-- Isso garante que a biblioteca seja carregada corretamente primeiro
 		local function setup_capture()
 			-- Detectar função de clipboard disponível (compatível com Hydrogen e outros executores)
 			local clipboard_func = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
@@ -131,10 +135,6 @@ function Task()
 		end
 		setup_capture()
 		-- ===================== FIM CAPTURA =====================
-		
-		-- Obter a biblioteca da API Luarmor (código original)
-		-- Agora o hook já está configurado e vai capturar quando a biblioteca usar game:HttpGet()
-		local api = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
 
 		-- Keyless Check
 		if game_cfg.keyless then
