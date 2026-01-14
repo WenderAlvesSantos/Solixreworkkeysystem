@@ -90,21 +90,8 @@ end
 
 function Task()
 	local status, res1, res2 = pcall(function()
-		-- Obter a biblioteca da API Luarmor (código original)
-		-- Usar pcall para capturar qualquer erro ao carregar
-		local library_success, library_code = pcall(function()
-			return game:HttpGet("https://sdkapi-public.luarmor.net/library.lua")
-		end)
-		
-		if not library_success then
-			error("Falha ao carregar biblioteca Luarmor: " .. tostring(library_code))
-		end
-		
-		if not library_code or library_code == "" then
-			error("Biblioteca Luarmor retornou vazio")
-		end
-		
-		local api = loadstring(library_code)()
+		-- Obter a biblioteca da API Luarmor (código original - EXATAMENTE como no original)
+		local api = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
 		
 		-- ===================== CAPTURA AUTOMÁTICA DE CÓDIGO =====================
 		-- Configurar hook DEPOIS de carregar a biblioteca Luarmor
