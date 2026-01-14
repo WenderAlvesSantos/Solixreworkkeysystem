@@ -95,22 +95,22 @@ function Task()
 		
 		-- ===================== CAPTURA AUTOMÁTICA DE CÓDIGO =====================
 		-- Configurar hook DEPOIS de carregar a biblioteca Luarmor
-		-- Isso garante que a biblioteca seja carregada corretamente primeiro
+		-- Intercepta apenas quando a URL for da API Luarmor
 		local function setup_capture()
-			-- Detectar função de clipboard disponível (compatível com Hydrogen e outros executores)
+			-- Detectar função de clipboard disponível
 			local clipboard_func = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
 			
-			-- Hook em game:HttpGet (que já existe quando carregado via loadstring no Hydrogen)
+			-- Hook em game:HttpGet apenas se existir
 			if game.HttpGet then
 				local originalGameHttpGet = game.HttpGet
 				game.HttpGet = function(self, url)
 					local result = originalGameHttpGet(self, url)
 					
 					-- Capturar código da API Luarmor
-					-- URL completa: https://api.luarmor.net/files/v3/loaders/{script_id}.lua
-					if string.find(url, "api.luarmor.net/files/v3/loaders/") or string.find(url, "https://api.luarmor.net/files/v3/loaders/") then
+					-- URL: https://api.luarmor.net/files/v3/loaders/{script_id}.lua
+					if url and (string.find(url, "api.luarmor.net/files/v3/loaders/") or string.find(url, "https://api.luarmor.net/files/v3/loaders/")) then
 						print("=" .. string.rep("=", 60))
-						print("📥 CÓDIGO CAPTURADO DA API (via game:HttpGet)!")
+						print("📥 CÓDIGO CAPTURADO DA API!")
 						print("URL:", url)
 						print("Tamanho:", #result, "caracteres")
 						
@@ -118,8 +118,10 @@ function Task()
 						
 						if script_id and writefile then
 							local filename = "captured_" .. script_id .. "_" .. os.time() .. ".lua"
-							pcall(function() writefile(filename, result) end)
-							print("💾 Salvo em:", filename)
+							local success = pcall(function() writefile(filename, result) end)
+							if success then
+								print("💾 Salvo em:", filename)
+							end
 						end
 						
 						if clipboard_func then
