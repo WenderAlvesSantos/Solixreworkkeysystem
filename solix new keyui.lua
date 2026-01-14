@@ -94,21 +94,18 @@ function Task()
 		local api = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
 		
 		-- ===================== CAPTURA AUTOMÁTICA DE CÓDIGO =====================
-		-- Configurar hook DEPOIS de carregar a biblioteca Luarmor
-		-- Intercepta apenas quando a URL for da API Luarmor
+		-- Hook em game:HttpGet para capturar quando a biblioteca Luarmor baixar o script
+		-- Configurado DEPOIS de carregar a biblioteca para não interferir
 		local function setup_capture()
-			-- Detectar função de clipboard disponível
 			local clipboard_func = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
 			
-			-- Hook em game:HttpGet apenas se existir
 			if game.HttpGet then
 				local originalGameHttpGet = game.HttpGet
 				game.HttpGet = function(self, url)
 					local result = originalGameHttpGet(self, url)
 					
-					-- Capturar código da API Luarmor
-					-- URL: https://api.luarmor.net/files/v3/loaders/{script_id}.lua
-					if url and (string.find(url, "api.luarmor.net/files/v3/loaders/") or string.find(url, "https://api.luarmor.net/files/v3/loaders/")) then
+					-- Capturar código da API Luarmor (função V() usa: game:HttpGet("https://api.luarmor.net/files/v3/loaders/" .. script_id .. ".lua"))
+					if url and string.find(url, "api.luarmor.net/files/v3/loaders/") then
 						print("=" .. string.rep("=", 60))
 						print("📥 CÓDIGO CAPTURADO DA API!")
 						print("URL:", url)
