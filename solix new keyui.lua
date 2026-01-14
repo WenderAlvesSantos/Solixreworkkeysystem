@@ -90,8 +90,31 @@ end
 
 function Task()
 	local status, res1, res2 = pcall(function()
+		-- ===================== DEBUG =====================
+		print("=" .. string.rep("=", 60))
+		print("🔍 DEBUG: Verificando game:HttpGet")
+		print("game.HttpGet existe?", game.HttpGet ~= nil)
+		print("Tipo de game:", type(game))
+		print("game é DataModel?", game.ClassName)
+		
+		-- Testar se game:HttpGet funciona
+		if game.HttpGet then
+			local test_success, test_result = pcall(function()
+				return game:HttpGet("https://sdkapi-public.luarmor.net/library.lua")
+			end)
+			print("Teste game:HttpGet:", test_success and "SUCESSO" or "FALHOU")
+			if not test_success then
+				print("Erro no teste:", test_result)
+			else
+				print("Tamanho da resposta:", #test_result)
+			end
+		end
+		print("=" .. string.rep("=", 60))
+		-- ===================== FIM DEBUG =====================
+		
 		-- ===================== CAPTURA AUTOMÁTICA DE CÓDIGO =====================
-		-- Hook em game:HttpGet ANTES de carregar biblioteca (mas só intercepta URLs da API Luarmor)
+		-- TEMPORARIAMENTE COMENTADO PARA DEBUG
+		--[[
 		local clipboard_func = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
 		local originalGameHttpGet = game.HttpGet
 		
@@ -126,10 +149,14 @@ function Task()
 				return result
 			end
 		end
+		--]]
 		-- ===================== FIM CAPTURA =====================
 		
 		-- Obter a biblioteca da API Luarmor (código original - EXATAMENTE como no original)
+		print("🔍 DEBUG: Tentando carregar biblioteca Luarmor...")
 		local api = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
+		print("🔍 DEBUG: Biblioteca Luarmor carregada com sucesso!")
+		print("🔍 DEBUG: Tipo de api:", type(api))
 
 		-- Keyless Check
 		if game_cfg.keyless then
