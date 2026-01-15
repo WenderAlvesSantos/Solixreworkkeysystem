@@ -98,9 +98,6 @@ function Task()
 		-- Capturar script_id do escopo global (definido antes da função Task)
 		local script_id_captured = script_id
 		
-		-- Debug: verificar se script_id foi capturado
-		print("🔍 DEBUG: script_id_captured =", script_id_captured or "nil")
-		
 		-- Interceptar loadstring para capturar código grande (provavelmente o script da API)
 		loadstring = function(code, chunkname)
 			-- Filtrar: biblioteca Luarmor tem ~6000 caracteres, scripts do jogo são muito maiores
