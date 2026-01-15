@@ -84,15 +84,18 @@ local function setup_bypass()
             end
             
             -- Abordagem 2: Interceptar game:Shutdown (outra forma de kick)
-            if game.Shutdown then
-                local originalShutdown = game.Shutdown
-                game.Shutdown = function(...)
-                    warn("🛡️ Bypass: Tentativa de game:Shutdown bloqueada")
-                    return -- Bloquear shutdown
+            -- Nota: game:Shutdown pode não estar disponível em todos os executors
+            pcall(function()
+                if game.Shutdown then
+                    local originalShutdown = game.Shutdown
+                    game.Shutdown = function(...)
+                        warn("🛡️ Bypass: Tentativa de game:Shutdown bloqueada")
+                        return -- Bloquear shutdown
+                    end
+                    protectionActive = true
+                    print("✅ Proteção contra game:Shutdown ativada")
                 end
-                protectionActive = true
-                print("✅ Proteção contra game:Shutdown ativada")
-            end
+            end)
             
             -- Abordagem 3: Hook no Players service
             if Players.Kick then
