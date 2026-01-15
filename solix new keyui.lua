@@ -90,42 +90,30 @@ end
 
 function Task()
 	local status, res1, res2 = pcall(function()
-		-- Obter a biblioteca da API Luarmor (código original - EXATAMENTE como no original)
-		local api = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
-		
 		-- ===================== CAPTURA AUTOMÁTICA DE CÓDIGO =====================
-		-- Hook DEPOIS de carregar biblioteca - usar wrapper que preserva contexto
+		-- Hook em loadstring para capturar código quando for executado
+		-- Isso evita modificar game:HttpGet que pode quebrar a biblioteca Luarmor
 		local clipboard_func = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
+		local original_loadstring = loadstring
 		
-		if game.HttpGet then
-			local originalGameHttpGet = game.HttpGet
-			
-			-- Criar wrapper que preserva o contexto corretamente
-			game.HttpGet = function(self, url)
-				-- Chamar função original preservando contexto
-				local result
-				if self == game then
-					-- Chamada via game:HttpGet(url)
-					result = originalGameHttpGet(game, url)
-				else
-					-- Chamada via game.HttpGet(self, url) ou outra forma
-					result = originalGameHttpGet(self or game, url)
-				end
-				
-				-- Capturar código da API Luarmor
-				-- A função V() (load_script) usa: game:HttpGet("https://api.luarmor.net/files/v3/loaders/" .. script_id .. ".lua")
-				if url and string.find(url, "api.luarmor.net/files/v3/loaders/") then
+		-- Interceptar loadstring para capturar código grande (provavelmente o script da API)
+		loadstring = function(code, chunkname)
+			-- Se o código for grande e parecer ser um script completo, tentar capturar
+			if type(code) == "string" and #code > 5000 then
+				-- Verificar se parece ser código Lua válido
+				if string.find(code, "local") or string.find(code, "function") or string.find(code, "game:") then
 					print("=" .. string.rep("=", 60))
-					print("📥 CÓDIGO CAPTURADO DA API!")
-					print("URL:", url)
-					print("Tamanho:", #result, "caracteres")
+					print("📥 CÓDIGO CAPTURADO VIA LOADSTRING!")
+					print("Tamanho:", #code, "caracteres")
+					print("Chunkname:", chunkname or "N/A")
 					
-					local script_id = url:match("loaders/([%w]+)%.lua")
+					-- Tentar extrair script_id do código ou usar timestamp
+					local script_id = "script_" .. os.time()
 					
-					if script_id and writefile then
-						local filename = "captured_" .. script_id .. "_" .. os.time() .. ".lua"
+					if writefile then
+						local filename = "captured_" .. script_id .. ".lua"
 						local success = pcall(function() 
-							writefile(filename, result)
+							writefile(filename, code)
 						end)
 						if success then
 							print("💾 Salvo em:", filename)
@@ -133,16 +121,19 @@ function Task()
 					end
 					
 					if clipboard_func then
-						pcall(function() clipboard_func(result) end)
+						pcall(function() clipboard_func(code) end)
 					end
 					
 					print("=" .. string.rep("=", 60))
 				end
-				
-				return result
 			end
+			
+			return original_loadstring(code, chunkname)
 		end
 		-- ===================== FIM CAPTURA =====================
+		
+		-- Obter a biblioteca da API Luarmor (código original - EXATAMENTE como no original)
+		local api = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
 
 		-- Keyless Check
 		if game_cfg.keyless then
