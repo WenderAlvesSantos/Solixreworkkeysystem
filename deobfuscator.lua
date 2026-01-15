@@ -5,39 +5,51 @@
 
 local function deobfuscate_luraph(script_content)
     print("🔓 Iniciando desofuscação...")
+    print("📊 Tamanho original:", #script_content, "caracteres")
     
     local deobfuscated = script_content
+    local changes = 0
     
     -- 1. Remover comentários de ofuscação
+    local before = #deobfuscated
     deobfuscated = deobfuscated:gsub("%-%- This file was protected using Luraph Obfuscator[^\n]*", "")
+    changes = changes + (before - #deobfuscated)
     
-    -- 2. Simplificar números hexadecimais e expressões numéricas complexas
-    -- Converter 0x56 para 86, etc.
+    -- 2. Simplificar números hexadecimais
     deobfuscated = deobfuscated:gsub("0x([%da-fA-F]+)", function(hex)
-        return tostring(tonumber(hex, 16))
+        local num = tonumber(hex, 16)
+        if num then
+            changes = changes + 1
+            return tostring(num)
+        end
+        return "0x" .. hex
     end)
     
-    -- 3. Simplificar expressões como (T>=0x56) para (T>=86)
-    deobfuscated = deobfuscated:gsub("%(0x([%da-fA-F]+)%)", function(hex)
-        return "(" .. tostring(tonumber(hex, 16)) .. ")"
-    end)
+    -- 3. Simplificar números decimais como 1.0 para 1
+    deobfuscated = deobfuscated:gsub("(%d+)%.0([^%d%.])", "%1%2")
+    deobfuscated = deobfuscated:gsub("(%d+)%.0$", "%1")
     
-    -- 4. Simplificar comparações com 0.0 para 0
+    -- 4. Simplificar comparações com 0.0
     deobfuscated = deobfuscated:gsub("==%s*0%.0", "== 0")
     deobfuscated = deobfuscated:gsub("~=%s*0%.0", "~= 0")
     deobfuscated = deobfuscated:gsub("<=%s*0%.0", "<= 0")
     deobfuscated = deobfuscated:gsub(">=%s*0%.0", ">= 0")
-    deobfuscated = deobfuscated:gsub("<%s*0%.0", "< 0")
-    deobfuscated = deobfuscated:gsub(">%s*0%.0", "> 0")
     
-    -- 5. Simplificar números como 1.0 para 1
-    deobfuscated = deobfuscated:gsub("(%d+)%.0([^%d])", "%1%2")
-    deobfuscated = deobfuscated:gsub("(%d+)%.0$", "%1")
-    
-    -- 6. Remover espaços desnecessários
-    deobfuscated = deobfuscated:gsub("%s+", " ")
+    -- 5. Tentar identificar e simplificar padrões comuns
+    -- Remover expressões como (W==W and W or T) que sempre retornam W
+    deobfuscated = deobfuscated:gsub("%([%w_]+)==[%w_]+%s+and%s+[%w_]+%s+or%s+[%w_]+%)", function(match)
+        -- Extrair primeira variável
+        local var = match:match("(%w+)")
+        if var then
+            changes = changes + 1
+            return "(" .. var .. ")"
+        end
+        return match
+    end)
     
     print("✅ Desofuscação básica concluída")
+    print("📊 Mudanças aplicadas:", changes)
+    print("📊 Tamanho final:", #deobfuscated, "caracteres")
     
     return deobfuscated
 end
