@@ -12,9 +12,9 @@ print("=" .. string.rep("=", 60))
 print("🔓 LOADER SEM PROTEÇÃO DE KEY")
 print("=" .. string.rep("=", 60))
 
--- Configuração: caminho do script capturado
--- Ajuste o nome do arquivo se necessário
-local script_path = "captured_e2718ddebf562c5c4080dfce26b09398_1768452204.lua"
+-- Configuração: caminhos dos scripts capturados
+local bootstrapper_path = "captured_e2718ddebf562c5c4080dfce26b09398_1768452203.lua"  -- Bootstrapper Luarmor
+local script_path = "captured_e2718ddebf562c5c4080dfce26b09398_1768452204.lua"        -- Script principal
 
 -- Função para listar arquivos capturados disponíveis
 local function find_captured_scripts()
@@ -28,9 +28,25 @@ local function find_captured_scripts()
     return files
 end
 
+-- Carregar bootstrapper primeiro (se existir)
+if readfile and isfile(bootstrapper_path) then
+    print("📦 Carregando bootstrapper Luarmor...")
+    local bootstrapper_content = readfile(bootstrapper_path)
+    if bootstrapper_content and #bootstrapper_content > 0 then
+        local boot_success, boot_err = pcall(function()
+            loadstring(bootstrapper_content)()
+        end)
+        if boot_success then
+            print("✅ Bootstrapper carregado")
+        else
+            warn("⚠️ Bootstrapper falhou (pode não ser necessário):", boot_err)
+        end
+    end
+end
+
 -- Verificar se o arquivo existe
 if readfile and isfile(script_path) then
-    print("📂 Carregando script:", script_path)
+    print("📂 Carregando script principal:", script_path)
     local script_content = readfile(script_path)
     
     if script_content and #script_content > 0 then
@@ -47,10 +63,12 @@ if readfile and isfile(script_path) then
         if not success then
             warn("❌ Erro ao executar script:")
             warn(tostring(err))
-            print("💡 Dica: O script pode precisar de desofuscação")
+            print("💡 Dica: O script pode precisar de desofuscação ou dependências")
         else
             print("✅ Script executado com sucesso!")
             print("=" .. string.rep("=", 60))
+            print("💡 Se você foi kickado, pode ser anti-cheat do jogo")
+            print("💡 Ou o script pode ter verificações internas que precisam ser removidas")
         end
     else
         warn("❌ Arquivo vazio ou corrompido")
