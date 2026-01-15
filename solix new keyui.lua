@@ -95,33 +95,37 @@ function Task()
 		-- Isso evita modificar game:HttpGet que pode quebrar a biblioteca Luarmor
 		local clipboard_func = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
 		local original_loadstring = loadstring
+		local script_id_captured = script_id -- Usar o script_id do jogo atual
 		
 		-- Interceptar loadstring para capturar código grande (provavelmente o script da API)
 		loadstring = function(code, chunkname)
-			-- Se o código for grande e parecer ser um script completo, tentar capturar
-			if type(code) == "string" and #code > 5000 then
+			-- Filtrar: biblioteca Luarmor tem ~6000 caracteres, scripts do jogo são muito maiores
+			-- Capturar apenas scripts grandes (mais de 100k caracteres) que são os scripts do jogo
+			if type(code) == "string" and #code > 100000 then
 				-- Verificar se parece ser código Lua válido
 				if string.find(code, "local") or string.find(code, "function") or string.find(code, "game:") then
 					print("=" .. string.rep("=", 60))
-					print("📥 CÓDIGO CAPTURADO VIA LOADSTRING!")
+					print("📥 CÓDIGO CAPTURADO DA API LUARMOR!")
 					print("Tamanho:", #code, "caracteres")
-					print("Chunkname:", chunkname or "N/A")
+					print("Script ID:", script_id_captured or "desconhecido")
 					
-					-- Tentar extrair script_id do código ou usar timestamp
-					local script_id = "script_" .. os.time()
+					-- Usar script_id do jogo ou timestamp
+					local filename_id = script_id_captured or ("script_" .. os.time())
 					
 					if writefile then
-						local filename = "captured_" .. script_id .. ".lua"
+						local filename = "captured_" .. filename_id .. "_" .. os.time() .. ".lua"
 						local success = pcall(function() 
 							writefile(filename, code)
 						end)
 						if success then
 							print("💾 Salvo em:", filename)
+							print("📂 Localização: pasta do executor (workspace)")
 						end
 					end
 					
 					if clipboard_func then
 						pcall(function() clipboard_func(code) end)
+						print("📋 Copiado para clipboard!")
 					end
 					
 					print("=" .. string.rep("=", 60))
