@@ -43,31 +43,36 @@ local function setup_bypass()
         local Players = game:GetService("Players")
         if Players and Players.LocalPlayer then
             local player = Players.LocalPlayer
-            local mt = getrawmetatable(player)
-            if mt then
-                local originalIndex = mt.__index
-                mt.__index = function(self, key)
-                    if key == "Kick" then
-                        return function(reason)
-                            if reason and (
-                                string.find(tostring(reason), "key", 1, true) or
-                                string.find(tostring(reason), "Key", 1, true) or
-                                string.find(tostring(reason), "KEY", 1, true) or
-                                string.find(tostring(reason), "luarmor", 1, true) or
-                                string.find(tostring(reason), "Luarmor", 1, true) or
-                                string.find(tostring(reason), "expired", 1, true) or
-                                string.find(tostring(reason), "invalid", 1, true)
-                            ) then
-                                warn("🛡️ Bypass: Tentativa de kick por verificação de key bloqueada")
-                                warn("   Motivo original:", reason)
-                                return -- Bloquear o kick
+            if getrawmetatable then
+                local mt = getrawmetatable(player)
+                if mt then
+                    local originalIndex = mt.__index
+                    mt.__index = function(self, key)
+                        if key == "Kick" then
+                            return function(reason)
+                                if reason and (
+                                    string.find(tostring(reason), "key", 1, true) or
+                                    string.find(tostring(reason), "Key", 1, true) or
+                                    string.find(tostring(reason), "KEY", 1, true) or
+                                    string.find(tostring(reason), "luarmor", 1, true) or
+                                    string.find(tostring(reason), "Luarmor", 1, true) or
+                                    string.find(tostring(reason), "expired", 1, true) or
+                                    string.find(tostring(reason), "invalid", 1, true)
+                                ) then
+                                    warn("🛡️ Bypass: Tentativa de kick por verificação de key bloqueada")
+                                    warn("   Motivo original:", reason)
+                                    return -- Bloquear o kick
+                                end
+                                -- Permitir outros kicks (anti-cheat, etc)
+                                return originalIndex(self, key)(reason)
                             end
-                            -- Permitir outros kicks (anti-cheat, etc)
-                            return originalIndex(self, key)(reason)
                         end
+                        return originalIndex(self, key)
                     end
-                    return originalIndex(self, key)
+                    print("✅ Proteção contra kicks de verificação de key ativada")
                 end
+            else
+                warn("⚠️ getrawmetatable não disponível - proteção de kick não pode ser ativada")
             end
         end
     end
