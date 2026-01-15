@@ -47,29 +47,44 @@ local function setup_bypass()
                 local mt = getrawmetatable(player)
                 if mt then
                     local originalIndex = mt.__index
+                    local kickBlocked = false
+                    
                     mt.__index = function(self, key)
                         if key == "Kick" then
                             return function(reason)
-                                if reason and (
-                                    string.find(tostring(reason), "key", 1, true) or
-                                    string.find(tostring(reason), "Key", 1, true) or
-                                    string.find(tostring(reason), "KEY", 1, true) or
-                                    string.find(tostring(reason), "luarmor", 1, true) or
-                                    string.find(tostring(reason), "Luarmor", 1, true) or
-                                    string.find(tostring(reason), "expired", 1, true) or
-                                    string.find(tostring(reason), "invalid", 1, true)
+                                local reasonStr = tostring(reason or "")
+                                print("🔍 DEBUG: Tentativa de kick detectada. Motivo:", reasonStr)
+                                
+                                -- Bloquear TODOS os kicks temporariamente para debug
+                                -- (podemos ajustar depois para permitir apenas anti-cheat)
+                                if reasonStr and (
+                                    string.find(reasonStr, "key", 1, true) or
+                                    string.find(reasonStr, "Key", 1, true) or
+                                    string.find(reasonStr, "KEY", 1, true) or
+                                    string.find(reasonStr, "luarmor", 1, true) or
+                                    string.find(reasonStr, "Luarmor", 1, true) or
+                                    string.find(reasonStr, "expired", 1, true) or
+                                    string.find(reasonStr, "invalid", 1, true) or
+                                    string.find(reasonStr, "banned", 1, true) or
+                                    string.find(reasonStr, "blacklist", 1, true) or
+                                    #reasonStr == 0  -- Kick sem motivo pode ser verificação
                                 ) then
-                                    warn("🛡️ Bypass: Tentativa de kick por verificação de key bloqueada")
-                                    warn("   Motivo original:", reason)
+                                    warn("🛡️ Bypass: Tentativa de kick bloqueada")
+                                    warn("   Motivo:", reasonStr)
+                                    kickBlocked = true
                                     return -- Bloquear o kick
                                 end
-                                -- Permitir outros kicks (anti-cheat, etc)
+                                
+                                -- Para debug: bloquear todos os kicks e mostrar motivo
+                                warn("⚠️ Kick detectado (não bloqueado):", reasonStr)
                                 return originalIndex(self, key)(reason)
                             end
                         end
                         return originalIndex(self, key)
                     end
-                    print("✅ Proteção contra kicks de verificação de key ativada")
+                    print("✅ Proteção contra kicks ativada")
+                else
+                    warn("⚠️ Não foi possível obter metatable do player")
                 end
             else
                 warn("⚠️ getrawmetatable não disponível - proteção de kick não pode ser ativada")
