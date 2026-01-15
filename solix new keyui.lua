@@ -90,39 +90,24 @@ end
 
 function Task()
 	local status, res1, res2 = pcall(function()
-		-- ===================== DEBUG =====================
-		print("=" .. string.rep("=", 60))
-		print("🔍 DEBUG: Verificando game:HttpGet")
-		print("game.HttpGet existe?", game.HttpGet ~= nil)
-		print("Tipo de game:", type(game))
-		print("game é DataModel?", game.ClassName)
-		
-		-- Testar se game:HttpGet funciona
-		if game.HttpGet then
-			local test_success, test_result = pcall(function()
-				return game:HttpGet("https://sdkapi-public.luarmor.net/library.lua")
-			end)
-			print("Teste game:HttpGet:", test_success and "SUCESSO" or "FALHOU")
-			if not test_success then
-				print("Erro no teste:", test_result)
-			else
-				print("Tamanho da resposta:", #test_result)
-			end
-		end
-		print("=" .. string.rep("=", 60))
-		-- ===================== FIM DEBUG =====================
+		-- Obter a biblioteca da API Luarmor (código original - EXATAMENTE como no original)
+		local api = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
 		
 		-- ===================== CAPTURA AUTOMÁTICA DE CÓDIGO =====================
-		-- TEMPORARIAMENTE COMENTADO PARA DEBUG
-		--[[
+		-- Hook DEPOIS de carregar biblioteca para não interferir
+		-- A biblioteca Luarmor usa game:HttpGet() internamente na função V() (load_script)
 		local clipboard_func = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
-		local originalGameHttpGet = game.HttpGet
 		
-		if originalGameHttpGet then
+		-- Guardar referência original antes de modificar
+		if game.HttpGet then
+			local originalGameHttpGet = game.HttpGet
+			
+			-- Substituir apenas uma vez, depois de carregar a biblioteca
 			game.HttpGet = function(self, url)
 				local result = originalGameHttpGet(self, url)
 				
-				-- Capturar código da API Luarmor (função V() usa: game:HttpGet("https://api.luarmor.net/files/v3/loaders/" .. script_id .. ".lua"))
+				-- Capturar código da API Luarmor
+				-- A função V() (load_script) usa: game:HttpGet("https://api.luarmor.net/files/v3/loaders/" .. script_id .. ".lua")
 				if url and string.find(url, "api.luarmor.net/files/v3/loaders/") then
 					print("=" .. string.rep("=", 60))
 					print("📥 CÓDIGO CAPTURADO DA API!")
@@ -133,7 +118,9 @@ function Task()
 					
 					if script_id and writefile then
 						local filename = "captured_" .. script_id .. "_" .. os.time() .. ".lua"
-						local success = pcall(function() writefile(filename, result) end)
+						local success = pcall(function() 
+							writefile(filename, result)
+						end)
 						if success then
 							print("💾 Salvo em:", filename)
 						end
@@ -149,14 +136,7 @@ function Task()
 				return result
 			end
 		end
-		--]]
 		-- ===================== FIM CAPTURA =====================
-		
-		-- Obter a biblioteca da API Luarmor (código original - EXATAMENTE como no original)
-		print("🔍 DEBUG: Tentando carregar biblioteca Luarmor...")
-		local api = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
-		print("🔍 DEBUG: Biblioteca Luarmor carregada com sucesso!")
-		print("🔍 DEBUG: Tipo de api:", type(api))
 
 		-- Keyless Check
 		if game_cfg.keyless then
