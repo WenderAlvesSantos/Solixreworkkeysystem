@@ -94,17 +94,23 @@ function Task()
 		local api = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
 		
 		-- ===================== CAPTURA AUTOMÁTICA DE CÓDIGO =====================
-		-- Hook DEPOIS de carregar biblioteca para não interferir
-		-- A biblioteca Luarmor usa game:HttpGet() internamente na função V() (load_script)
+		-- Hook DEPOIS de carregar biblioteca - usar wrapper que preserva contexto
 		local clipboard_func = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
 		
-		-- Guardar referência original antes de modificar
 		if game.HttpGet then
 			local originalGameHttpGet = game.HttpGet
 			
-			-- Substituir apenas uma vez, depois de carregar a biblioteca
+			-- Criar wrapper que preserva o contexto corretamente
 			game.HttpGet = function(self, url)
-				local result = originalGameHttpGet(self, url)
+				-- Chamar função original preservando contexto
+				local result
+				if self == game then
+					-- Chamada via game:HttpGet(url)
+					result = originalGameHttpGet(game, url)
+				else
+					-- Chamada via game.HttpGet(self, url) ou outra forma
+					result = originalGameHttpGet(self or game, url)
+				end
 				
 				-- Capturar código da API Luarmor
 				-- A função V() (load_script) usa: game:HttpGet("https://api.luarmor.net/files/v3/loaders/" .. script_id .. ".lua")
