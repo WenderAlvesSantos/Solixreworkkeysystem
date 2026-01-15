@@ -95,7 +95,11 @@ function Task()
 		-- Isso evita modificar game:HttpGet que pode quebrar a biblioteca Luarmor
 		local clipboard_func = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
 		local original_loadstring = loadstring
-		local script_id_captured = script_id -- Usar o script_id do jogo atual
+		-- Capturar script_id do escopo global (definido antes da função Task)
+		local script_id_captured = script_id
+		
+		-- Debug: verificar se script_id foi capturado
+		print("🔍 DEBUG: script_id_captured =", script_id_captured or "nil")
 		
 		-- Interceptar loadstring para capturar código grande (provavelmente o script da API)
 		loadstring = function(code, chunkname)
