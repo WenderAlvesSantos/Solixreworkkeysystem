@@ -12,6 +12,58 @@ print("=" .. string.rep("=", 60))
 print("🔓 LOADER SEM PROTEÇÃO DE KEY")
 print("=" .. string.rep("=", 60))
 
+-- ===================== BYPASS DE VERIFICAÇÕES =====================
+-- Criar ambiente simulado do Luarmor para evitar detecção
+local function setup_bypass()
+    -- Interceptar possíveis verificações de key
+    if not _G._luarmor_bypass_setup then
+        _G._luarmor_bypass_setup = true
+        
+        -- Criar tabela de bypass para verificações comuns
+        local bypass_table = {
+            check_key = function() 
+                return {code = "KEY_VALID", data = {auth_expire = os.time() + 999999999}} 
+            end,
+            load_script = function() end,
+            script_id = "e2718ddebf562c5c4080dfce26b09398",
+            verify = function() return true end,
+            validate = function() return true end
+        }
+        
+        -- Tentar injetar no ambiente global
+        if _G then
+            for k, v in pairs(bypass_table) do
+                if not _G[k] then
+                    _G[k] = v
+                end
+            end
+        end
+        
+        -- Interceptar possíveis chamadas de kick/ban
+        local Players = game:GetService("Players")
+        if Players and Players.LocalPlayer then
+            local originalKick = Players.LocalPlayer.Kick
+            Players.LocalPlayer.Kick = function(self, reason)
+                if reason and (
+                    string.find(tostring(reason), "key", 1, true) or
+                    string.find(tostring(reason), "Key", 1, true) or
+                    string.find(tostring(reason), "KEY", 1, true) or
+                    string.find(tostring(reason), "luarmor", 1, true) or
+                    string.find(tostring(reason), "Luarmor", 1, true)
+                ) then
+                    warn("🛡️ Bypass: Tentativa de kick por verificação de key bloqueada")
+                    warn("   Motivo original:", reason)
+                    return -- Bloquear o kick
+                end
+                return originalKick(self, reason)
+            end
+        end
+    end
+end
+
+setup_bypass()
+-- ===================== FIM BYPASS =====================
+
 -- Configuração: caminhos dos scripts capturados
 local bootstrapper_path = "captured_e2718ddebf562c5c4080dfce26b09398_1768452203.lua"  -- Bootstrapper Luarmor
 local script_path = "captured_e2718ddebf562c5c4080dfce26b09398_1768452204.lua"        -- Script principal
@@ -28,21 +80,9 @@ local function find_captured_scripts()
     return files
 end
 
--- Carregar bootstrapper primeiro (se existir)
-if readfile and isfile(bootstrapper_path) then
-    print("📦 Carregando bootstrapper Luarmor...")
-    local bootstrapper_content = readfile(bootstrapper_path)
-    if bootstrapper_content and #bootstrapper_content > 0 then
-        local boot_success, boot_err = pcall(function()
-            loadstring(bootstrapper_content)()
-        end)
-        if boot_success then
-            print("✅ Bootstrapper carregado")
-        else
-            warn("⚠️ Bootstrapper falhou (pode não ser necessário):", boot_err)
-        end
-    end
-end
+-- Pular bootstrapper - ele precisa de dependências específicas do Luarmor
+-- O script principal deve funcionar sem ele
+print("⏭️  Pulando bootstrapper (não necessário para execução direta)")
 
 -- Verificar se o arquivo existe
 if readfile and isfile(script_path) then
