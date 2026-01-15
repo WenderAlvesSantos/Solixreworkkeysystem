@@ -43,9 +43,16 @@ local function setup_bypass()
         local Players = game:GetService("Players")
         if Players and Players.LocalPlayer then
             local player = Players.LocalPlayer
-            if getrawmetatable then
+            if getrawmetatable and (setreadonly or makewritable) then
                 local mt = getrawmetatable(player)
                 if mt then
+                    -- Tornar metatable modificável
+                    if setreadonly then
+                        setreadonly(mt, false)
+                    elseif makewritable then
+                        makewritable(mt)
+                    end
+                    
                     local originalIndex = mt.__index
                     local kickBlocked = false
                     
@@ -55,8 +62,7 @@ local function setup_bypass()
                                 local reasonStr = tostring(reason or "")
                                 print("🔍 DEBUG: Tentativa de kick detectada. Motivo:", reasonStr)
                                 
-                                -- Bloquear TODOS os kicks temporariamente para debug
-                                -- (podemos ajustar depois para permitir apenas anti-cheat)
+                                -- Bloquear kicks relacionados a verificação de key
                                 if reasonStr and (
                                     string.find(reasonStr, "key", 1, true) or
                                     string.find(reasonStr, "Key", 1, true) or
@@ -75,19 +81,43 @@ local function setup_bypass()
                                     return -- Bloquear o kick
                                 end
                                 
-                                -- Para debug: bloquear todos os kicks e mostrar motivo
+                                -- Para debug: mostrar todos os kicks
                                 warn("⚠️ Kick detectado (não bloqueado):", reasonStr)
                                 return originalIndex(self, key)(reason)
                             end
                         end
                         return originalIndex(self, key)
                     end
+                    
+                    -- Restaurar readonly se necessário
+                    if setreadonly then
+                        setreadonly(mt, true)
+                    end
+                    
                     print("✅ Proteção contra kicks ativada")
                 else
                     warn("⚠️ Não foi possível obter metatable do player")
                 end
             else
-                warn("⚠️ getrawmetatable não disponível - proteção de kick não pode ser ativada")
+                -- Fallback: tentar interceptar diretamente (pode não funcionar)
+                if player and player.Kick then
+                    local originalKick = player.Kick
+                    player.Kick = function(reason)
+                        local reasonStr = tostring(reason or "")
+                        if reasonStr and (
+                            string.find(reasonStr, "key", 1, true) or
+                            string.find(reasonStr, "Key", 1, true) or
+                            string.find(reasonStr, "luarmor", 1, true)
+                        ) then
+                            warn("🛡️ Bypass: Tentativa de kick bloqueada (fallback)")
+                            return
+                        end
+                        return originalKick(reason)
+                    end
+                    print("✅ Proteção contra kicks ativada (modo fallback)")
+                else
+                    warn("⚠️ Não foi possível ativar proteção de kick")
+                end
             end
         end
     end
